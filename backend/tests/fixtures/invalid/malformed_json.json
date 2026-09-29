@@ -1,0 +1,12 @@
+{
+  "_defect": "This file is not valid JSON. The array is never closed and the last record is cut off mid-field, which is what a partially written export looks like.",
+  "_expected": "the whole file fails to load (file_ok=False) with a JSON decode error naming the file, so the failure is loud rather than silently yielding zero events",
+  "generated_at": "2026-09-29T06:00:00Z",
+  "lookback_days": 90,
+  "coverage": [],
+  "events": [
+    {
+      "source": "aws_cloudtrail",
+      "eventID": "evt-invalid-partial",
+      "eventTime": "2026-09-20T14:30:00Z",
+      "eventName": "s3:GetOb

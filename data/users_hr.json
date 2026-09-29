@@ -1,0 +1,123 @@
+{
+  "generated_at": "2026-09-29T06:00:00Z",
+  "source_system": "workday",
+  "users": [
+    {
+      "id": "u_bob",
+      "username": "bob.chen",
+      "name": "Bob Chen",
+      "email": "bob.chen@northwind.example",
+      "department": "Platform Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": "u_erin",
+      "hire_date": "2021-04-12",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_alice",
+      "username": "alice.nguyen",
+      "name": "Alice Nguyen",
+      "email": "alice.nguyen@northwind.example",
+      "department": "Security Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": null,
+      "hire_date": "2019-02-04",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_carol",
+      "username": "carol.diaz",
+      "name": "Carol Diaz",
+      "email": "carol.diaz@northwind.example",
+      "department": "Marketing",
+      "employment_status": "TERMINATED",
+      "termination_date": "2026-08-14T17:00:00Z",
+      "termination_reason": "resignation",
+      "manager_id": null,
+      "hire_date": "2022-09-19",
+      "source_updated_at": "2026-08-14T17:05:00Z"
+    },
+    {
+      "id": "u_dave",
+      "username": "dave.okonkwo",
+      "name": "Dave Okonkwo",
+      "email": "dave.okonkwo@northwind.example",
+      "department": "Customer Support",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": null,
+      "hire_date": "2023-06-05",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_erin",
+      "username": "erin.walsh",
+      "name": "Erin Walsh",
+      "email": "erin.walsh@northwind.example",
+      "department": "Platform Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": null,
+      "hire_date": "2018-11-26",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_frank",
+      "username": "frank.moreau",
+      "name": "Frank Moreau",
+      "email": "frank.moreau@northwind.example",
+      "department": "Finance",
+      "employment_status": "TERMINATED",
+      "termination_date": "2026-07-31T16:00:00Z",
+      "termination_reason": "redundancy",
+      "manager_id": null,
+      "hire_date": "2020-01-13",
+      "source_updated_at": "2026-07-31T16:10:00Z"
+    },
+    {
+      "id": "u_gina",
+      "username": "gina.patel",
+      "name": "Gina Patel",
+      "email": "gina.patel@northwind.example",
+      "department": "Data Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": "u_henry",
+      "hire_date": "2024-03-18",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_henry",
+      "username": "henry.okafor",
+      "name": "Henry Okafor",
+      "email": "henry.okafor@northwind.example",
+      "department": "Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": null,
+      "hire_date": "2017-08-21",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    },
+    {
+      "id": "u_ivan",
+      "username": "ivan.petrov",
+      "name": "Ivan Petrov",
+      "email": "ivan.petrov@northwind.example",
+      "department": "Platform Engineering",
+      "employment_status": "ACTIVE",
+      "termination_date": null,
+      "termination_reason": null,
+      "manager_id": "u_erin",
+      "hire_date": "2022-01-10",
+      "source_updated_at": "2026-09-29T05:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+# --- Python / backend ------------------------------------------------------- #
+# The virtualenv is rebuilt from requirements.txt, never committed.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- local database --------------------------------------------------------- #
+# The SQLite file is *derived*: it is rebuilt from data/ on startup. Committing
+# it would mean the repository carried a stale copy of the review alongside the
+# feeds that generate it, and the two would eventually disagree.
+*.db
+*.db-journal
+*.sqlite3
+
+# --- configuration ---------------------------------------------------------- #
+# `.env` holds local overrides. `.env.example` IS committed and pins the fixture
+# set's analysis date, so it is the file to copy from -- see the README.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# --- Node / Next.js --------------------------------------------------------- #
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+npm-debug.log*
+yarn-error.log*
+.eslintcache
+*.tsbuildinfo
+
+# --- generated reports ------------------------------------------------------ #
+# The directory is kept (reports/.gitkeep); its contents are run output.
+reports/*
+!reports/.gitkeep
+
+# --- editors / OS ----------------------------------------------------------- #
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

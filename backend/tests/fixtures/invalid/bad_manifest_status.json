@@ -1,0 +1,46 @@
+{
+  "_defect": "The coverage manifest says aws_cloudtrail is SOMETIMES complete. 'SOMETIMES' is not a member of Coverage, so the row cannot be parsed.",
+  "_expected": "one rejection on the manifest row, AND the pipeline then refuses to run: a source whose row could not be read is indistinguishable from a source that never declared anything, and an undeclared source is fatal by design",
+  "generated_at": "2026-09-29T06:00:00Z",
+  "lookback_days": 90,
+  "coverage": [
+    {
+      "source": "aws_cloudtrail",
+      "status": "SOMETIMES",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 1,
+      "note": null
+    },
+    {
+      "source": "github_audit",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 0,
+      "note": null
+    },
+    {
+      "source": "proxy_zscaler",
+      "status": "MISSING",
+      "window_start": null,
+      "window_end": null,
+      "record_count": 0,
+      "note": "no proxy export was delivered for this window"
+    }
+  ],
+  "events": [
+    {
+      "source": "aws_cloudtrail",
+      "eventID": "evt-invalid-manifest",
+      "eventTime": "2026-09-20T14:30:00Z",
+      "eventName": "s3:GetObject",
+      "eventSource": "s3.amazonaws.com",
+      "sourceIPAddress": "203.0.113.10",
+      "userIdentityArn": "arn:aws:iam::123456789012:user/bob.chen",
+      "requestResource": "arn:aws:s3:::northwind-reports/q3.csv",
+      "errorCode": null,
+      "credential_id": "AKIABOBKEY001"
+    }
+  ]
+}

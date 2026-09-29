@@ -1,0 +1,46 @@
+{
+  "_defect": "eventTime is truncated mid-field ('14:3'), which is what a log shipper produces when it truncates a line or a buffer is cut. It is close enough to a real value to look plausible at a glance.",
+  "_expected": "one rejection on field eventTime; this is the shipped fixture set's evt-aws-0028 defect in isolation",
+  "generated_at": "2026-09-29T06:00:00Z",
+  "lookback_days": 90,
+  "coverage": [
+    {
+      "source": "aws_cloudtrail",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 1,
+      "note": null
+    },
+    {
+      "source": "github_audit",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 0,
+      "note": null
+    },
+    {
+      "source": "proxy_zscaler",
+      "status": "MISSING",
+      "window_start": null,
+      "window_end": null,
+      "record_count": 0,
+      "note": "no proxy export was delivered for this window"
+    }
+  ],
+  "events": [
+    {
+      "source": "aws_cloudtrail",
+      "eventID": "evt-invalid-truncated",
+      "eventTime": "2026-09-20T14:3",
+      "eventName": "s3:GetObject",
+      "eventSource": "s3.amazonaws.com",
+      "sourceIPAddress": "203.0.113.10",
+      "userIdentityArn": "arn:aws:iam::123456789012:user/bob.chen",
+      "requestResource": "arn:aws:s3:::northwind-reports/q3.csv",
+      "errorCode": null,
+      "credential_id": "AKIABOBKEY001"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "_defect": "events is an object instead of a list. The file is valid JSON and the envelope looks plausible, but nothing in it can be read as a record list.",
+  "_expected": "the whole file fails to load (file_ok=False), so every user's coverage becomes NOT_QUERIED -- 'we never looked' -- which is a different and more honest statement than 'the source sent nothing'",
+  "generated_at": "2026-09-29T06:00:00Z",
+  "lookback_days": 90,
+  "coverage": [
+    {
+      "source": "aws_cloudtrail",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 1,
+      "note": null
+    }
+  ],
+  "events": {
+    "aws_cloudtrail": []
+  }
+}

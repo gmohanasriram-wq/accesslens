@@ -1,0 +1,47 @@
+{
+  "_defect": "The event carries mfaUsed, a field AccessLens does not model. UTCModel sets extra='forbid', so an unrecognised key is an error rather than a silently dropped one.",
+  "_expected": "one rejection naming the unknown field; a dropped field is indistinguishable from a field that was never sent, and in an audit those are different answers",
+  "generated_at": "2026-09-29T06:00:00Z",
+  "lookback_days": 90,
+  "coverage": [
+    {
+      "source": "aws_cloudtrail",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 1,
+      "note": null
+    },
+    {
+      "source": "github_audit",
+      "status": "COMPLETE",
+      "window_start": "2026-07-01T06:00:00Z",
+      "window_end": "2026-09-29T06:00:00Z",
+      "record_count": 0,
+      "note": null
+    },
+    {
+      "source": "proxy_zscaler",
+      "status": "MISSING",
+      "window_start": null,
+      "window_end": null,
+      "record_count": 0,
+      "note": "no proxy export was delivered for this window"
+    }
+  ],
+  "events": [
+    {
+      "source": "aws_cloudtrail",
+      "eventID": "evt-invalid-unknown-field",
+      "eventTime": "2026-09-20T14:30:00Z",
+      "eventName": "s3:GetObject",
+      "eventSource": "s3.amazonaws.com",
+      "sourceIPAddress": "203.0.113.10",
+      "userIdentityArn": "arn:aws:iam::123456789012:user/bob.chen",
+      "requestResource": "arn:aws:s3:::northwind-reports/q3.csv",
+      "errorCode": null,
+      "credential_id": "AKIABOBKEY001",
+      "mfaUsed": true
+    }
+  ]
+}

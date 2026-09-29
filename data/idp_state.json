@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-09-29T06:00:00Z",
+  "source_system": "okta",
+  "identities": [
+    {
+      "account_id": "00u_bob01",
+      "provider": "okta",
+      "login": "bob.chen",
+      "email": "bob.chen@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "aws-platform-admins",
+        "eng-all"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_alice01",
+      "provider": "okta",
+      "login": "alice.nguyen",
+      "email": "alice.nguyen@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "break-glass",
+        "security-engineering"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_carol01",
+      "provider": "okta",
+      "login": "carol.diaz",
+      "email": "carol.diaz@northwind.example",
+      "status": "DISABLED",
+      "deactivated_at": "2026-08-15T09:12:00Z",
+      "deactivation_trigger": "hr_termination",
+      "groups": [
+        "marketing",
+        "github-northwind-site"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_dave01",
+      "provider": "okta",
+      "login": "dave.okonkwo",
+      "email": "dave.okonkwo@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "support",
+        "support-readonly"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_erin01",
+      "provider": "okta",
+      "login": "erin.walsh",
+      "email": "erin.walsh@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "aws-platform-admins",
+        "github-org-owners"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_frank01",
+      "provider": "okta",
+      "login": "frank.moreau",
+      "email": "frank.moreau@northwind.example",
+      "status": "DISABLED",
+      "deactivated_at": "2026-07-31T18:45:00Z",
+      "deactivation_trigger": "hr_termination",
+      "groups": [
+        "finance"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_gina01",
+      "provider": "okta",
+      "login": "gina.patel",
+      "email": "gina.patel@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "data-engineering"
+      ],
+      "mfa_enrolled": false
+    },
+    {
+      "account_id": "00u_henry01",
+      "provider": "okta",
+      "login": "henry.okafor",
+      "email": "henry.okafor@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "engineering",
+        "support-readonly"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_henry98-legacy",
+      "provider": "okta",
+      "login": "henry.okafor",
+      "email": "henry.okafor@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "engineering"
+      ],
+      "mfa_enrolled": false
+    },
+    {
+      "account_id": "00u_ivan01",
+      "provider": "okta",
+      "login": "ivan.petrov",
+      "email": "ivan.petrov@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "aws-platform-admins",
+        "eng-all"
+      ],
+      "mfa_enrolled": true
+    },
+    {
+      "account_id": "00u_svcbackup",
+      "provider": "okta",
+      "login": "svc.backup",
+      "email": "svc.backup@northwind.example",
+      "status": "ACTIVE",
+      "deactivated_at": null,
+      "deactivation_trigger": null,
+      "groups": [
+        "service-accounts"
+      ],
+      "mfa_enrolled": false
+    }
+  ]
+}

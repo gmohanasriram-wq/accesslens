@@ -1,0 +1,367 @@
+{
+  "_comment": [
+    "Test oracles for the bundled fixture set. This file is the SPECIFICATION for",
+    "the Phase 2 engine (app/engine/), written before the engine exists so that it",
+    "can fail honestly rather than be fitted to whatever the code happens to do.",
+    "",
+    "Phase 1 asserts the `coverage` and `usage_observation` blocks, because those are",
+    "produced by ingestion and are true today. That is done by tests/test_coverage.py",
+    "(per-source verdicts, gaps and observed capabilities) and tests/test_api.py (the",
+    "same verdicts as the HTTP surface reports them). The `finding` blocks are the",
+    "Phase 2 target and are asserted by nothing yet -- app/engine/ is still empty, so",
+    "there is no implementation for them to disagree with. Until then they stand as the",
+    "written specification Phase 2 must satisfy, and `must_not_say` lists the words a",
+    "PROTECTED or INSUFFICIENT_EVIDENCE finding must never be explained with.",
+    "",
+    "Each persona maps to a row of blueprint section 16's testing matrix. `scenario`",
+    "names that row so a reviewer can check coverage of the matrix by reading this",
+    "file alone."
+  ],
+  "analysis_as_of": "2026-09-29T06:00:00Z",
+  "window_start": "2026-07-01T06:00:00Z",
+  "window_end": "2026-09-29T06:00:00Z",
+  "personas": [
+    {
+      "user_id": "u_bob",
+      "username": "bob.chen",
+      "scenario": "high privilege + low observed usage",
+      "why_this_persona_exists": "The core finding. Holds AdministratorAccess (13 capabilities) but the window shows only s3:ListBucket, s3:GetObject and ec2:DescribeInstances plus an sts:GetCallerIdentity that maps to no capability. 4 successful events clears the confidence floor of 3, so the ratio is meaningful, and 2/13 capabilities is well under the 0.25 threshold. This must be REVIEW_REQUIRED, never an automatic removal.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 4,
+      "observed_capabilities": ["S3_READ", "EC2_READ"],
+      "finding": {
+        "type": "HIGH_PRIVILEGE_LOW_USAGE",
+        "status": "REVIEW_REQUIRED",
+        "severity": "HIGH",
+        "recommendation": "SUGGEST_DOWNSCOPE_MANUAL_APPROVAL",
+        "evidence_completeness": "COMPLETE"
+      }
+    },
+    {
+      "user_id": "u_alice",
+      "username": "alice.nguyen",
+      "scenario": "protected break-glass role, no activity observed",
+      "why_this_persona_exists": "The sharpest test of 'unused is not unnecessary'. Coverage is COMPLETE and she has zero successful events, so the usage verdict is a DETERMINATE NONE_OBSERVED -- we can prove she did not use the role. The evidence therefore genuinely supports 'unused', and the correct answer is still that nothing should be removed, because inactivity is the intended state of a break-glass role. A system that treats 'unused' as 'unnecessary' will fail exactly here, on data that looks like a textbook finding.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "NONE_OBSERVED",
+      "observed_event_count": 0,
+      "observed_capabilities": [],
+      "finding": {
+        "type": "PROTECTED_BREAK_GLASS",
+        "status": "PROTECTED",
+        "severity": "INFO",
+        "recommendation": "NO_ACTION_DOCUMENT_JUSTIFICATION",
+        "evidence_completeness": "COMPLETE"
+      },
+      "must_not_say": [
+        "revoke",
+        "remove",
+        "unused",
+        "unnecessary",
+        "prune"
+      ]
+    },
+    {
+      "user_id": "u_carol",
+      "username": "carol.diaz",
+      "scenario": "terminated, IdP disabled, activity after deactivation (ghost access)",
+      "why_this_persona_exists": "The deprovisioning failure the product exists to catch. HR termination at 2026-08-14T17:00:00Z, Okta disable at 2026-08-15T09:12:00Z, then GitHub activity on 2026-08-19 and later using a token the IdP never revoked. Her AWS AdministratorAccess is also still granted and her post-deactivation AWS call was DENIED, which proves the credential was live without counting as successful use.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE",
+        "github_audit": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 6,
+      "denied_event_count": 1,
+      "observed_capabilities": ["S3_READ", "EC2_READ", "REPO_READ", "REPO_WRITE"],
+      "post_deactivation_successful_events": 3,
+      "finding": {
+        "type": "GHOST_ACCESS",
+        "status": "INVESTIGATION_REQUIRED",
+        "severity": "CRITICAL",
+        "recommendation": "INVESTIGATE_GHOST_ACCESS",
+        "evidence_completeness": "COMPLETE"
+      },
+      "timeline": [
+        { "at": "2026-08-14T17:00:00Z", "what": "HR records termination" },
+        { "at": "2026-08-15T09:12:00Z", "what": "Okta disables the account" },
+        { "at": "2026-08-16T07:30:12Z", "what": "AWS call denied" },
+        { "at": "2026-08-19T02:41:33Z", "what": "first successful GitHub clone after deactivation" }
+      ]
+    },
+    {
+      "user_id": "u_dave",
+      "username": "dave.okonkwo",
+      "scenario": "normal user, no finding",
+      "why_this_persona_exists": "The control case. Exercises every capability he was granted (4/4 across AWS and GitHub), so nothing about his access is idle and any finding would be a false positive. A rule set that fires on everyone passes the interesting personas and fails this one.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE",
+        "github_audit": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 8,
+      "_observed_capabilities_correction": [
+        "This list originally also named REPO_WRITE, which was wrong. Dave holds",
+        "SupportReadOnlyAccess -> {EC2_READ, LOGS_READ, S3_READ} and repo:read ->",
+        "{REPO_READ}; his events are s3:GetObject, s3:ListBucket, logs:GetLogEvents,",
+        "logs:FilterLogEvents, ec2:DescribeInstances, repo.clone, git.fetch and",
+        "pull_request.read. Nothing he does or was granted yields REPO_WRITE, and",
+        "his utilization_arithmetic entry below (4 granted, 4 used, no never-list)",
+        "cannot hold if it did. The code was right and this array was the typo --",
+        "recorded here rather than silently fixed, because an oracle quietly edited",
+        "to match the implementation is no longer an oracle."
+      ],
+      "observed_capabilities": [
+        "S3_READ",
+        "LOGS_READ",
+        "EC2_READ",
+        "REPO_READ"
+      ],
+      "finding": {
+        "type": "NO_FINDING",
+        "status": "CLOSED",
+        "severity": "INFO",
+        "recommendation": "NO_ACTION_DOCUMENT_JUSTIFICATION",
+        "evidence_completeness": "COMPLETE"
+      }
+    },
+    {
+      "user_id": "u_erin",
+      "username": "erin.walsh",
+      "scenario": "rarely used privileged permission (review, not removal)",
+      "why_this_persona_exists": "Distinguishes 'low usage' from 'narrow usage'. Her overall utilisation is high (9/17 granted capabilities, well above the 0.25 threshold), so a naive ratio check finds nothing -- but she holds AdministratorAccess, org:admin and repo:admin, none of whose destructive capabilities (IAM_WRITE, KMS_WRITE, LOGS_WRITE, S3_DELETE, REPO_ADMIN, ORG_ADMIN) she has ever exercised. Also exercises the assumed-role ARN path: every one of her AWS events arrives as arn:aws:iam::123456789012:assumed-role/PlatformAdmin/erin.walsh.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE",
+        "github_audit": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 10,
+      "observed_capabilities": [
+        "S3_READ",
+        "S3_WRITE",
+        "EC2_READ",
+        "EC2_WRITE",
+        "LOGS_READ",
+        "IAM_READ",
+        "KMS_READ",
+        "REPO_READ",
+        "REPO_WRITE"
+      ],
+      "never_exercised_privileged_capabilities": [
+        "IAM_WRITE",
+        "KMS_WRITE",
+        "LOGS_WRITE",
+        "REPO_ADMIN",
+        "ORG_ADMIN"
+      ],
+      "finding": {
+        "type": "RARELY_USED_PRIVILEGED_PERMISSION",
+        "status": "REVIEW_REQUIRED",
+        "severity": "MEDIUM",
+        "recommendation": "MANUAL_REVIEW",
+        "evidence_completeness": "COMPLETE"
+      }
+    },
+    {
+      "user_id": "u_frank",
+      "username": "frank.moreau",
+      "scenario": "disabled identity with NO later activity (no ghost access)",
+      "why_this_persona_exists": "The mirror of Carol, and the negative control for Rule D. Terminated 2026-07-31 and disabled the same evening; his last activity is 2026-07-30, one day BEFORE termination. Nothing happens afterwards. A ghost-access rule that fires on 'has activity in the window' rather than 'has activity after deactivation' will produce a false CRITICAL here.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE",
+        "github_audit": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 5,
+      "post_deactivation_successful_events": 0,
+      "finding": {
+        "type": "NO_FINDING",
+        "status": "CLOSED",
+        "severity": "INFO",
+        "recommendation": "NO_ACTION_DOCUMENT_JUSTIFICATION",
+        "evidence_completeness": "COMPLETE"
+      }
+    },
+    {
+      "user_id": "u_gina",
+      "username": "gina.patel",
+      "scenario": "missing activity logs -> insufficient evidence",
+      "why_this_persona_exists": "The 'missing evidence is not safe' case in its purest form. Her only entitlement is an APPLICATION role, so the only telemetry that could ever observe her is the proxy -- and the proxy export was never delivered. She has zero events, exactly like Alice, and the two must reach opposite conclusions: Alice's zero is a fact we can vouch for, Gina's is a hole. Nothing about her may be reported as clean.",
+      "coverage": {
+        "proxy_zscaler": "MISSING"
+      },
+      "overall_coverage": "MISSING",
+      "usage_observation": "UNKNOWN",
+      "observed_event_count": 0,
+      "expected_gap_reasons": ["SOURCE_MISSING"],
+      "finding": {
+        "type": "INSUFFICIENT_EVIDENCE",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "severity": "INFO",
+        "recommendation": "GATHER_MORE_EVIDENCE",
+        "evidence_completeness": "MISSING"
+      },
+      "must_not_say": ["no activity", "unused", "clean", "no findings"]
+    },
+    {
+      "user_id": "u_ivan",
+      "username": "ivan.petrov",
+      "scenario": "invalid timestamp -> validation error / insufficient evidence",
+      "why_this_persona_exists": "The case where a naive system is confidently wrong. One of his CloudTrail records has a truncated eventTime ('2026-09-20T14:3'), so it is rejected at ingest. He is left with 4 visible events, only S3_READ and EC2_READ exercised out of PowerUserAccess's granted set -- numbers that look like a decisive HIGH_PRIVILEGE_LOW_USAGE finding. The rejected record is precisely the kind that would have added activity, so the honest answer is INSUFFICIENT_EVIDENCE. Reporting the finding would be reporting a conclusion the data does not support.",
+      "coverage": {
+        "aws_cloudtrail": "PARTIAL"
+      },
+      "overall_coverage": "PARTIAL",
+      "usage_observation": "UNKNOWN",
+      "observed_event_count": 4,
+      "expected_gap_reasons": ["RECORDS_REJECTED"],
+      "rejected_records": ["evt-aws-0028"],
+      "finding": {
+        "type": "INSUFFICIENT_EVIDENCE",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "severity": "INFO",
+        "recommendation": "GATHER_MORE_EVIDENCE",
+        "evidence_completeness": "PARTIAL"
+      },
+      "must_not_say": ["low usage", "unused", "high privilege low usage"]
+    },
+    {
+      "user_id": "u_henry",
+      "username": "henry.okafor",
+      "scenario": "duplicate identity -> investigation required",
+      "why_this_persona_exists": "Two Okta accounts share the login henry.okafor: the current one and a legacy '00u_henry98-legacy' that was never decommissioned. Access cannot be attributed to a single principal, which is a real and common directory-hygiene failure. His activity itself is unremarkable, so the finding has to come from the identity layer rather than from usage.",
+      "coverage": {
+        "aws_cloudtrail": "COMPLETE",
+        "github_audit": "COMPLETE"
+      },
+      "overall_coverage": "COMPLETE",
+      "usage_observation": "OBSERVED",
+      "observed_event_count": 4,
+      "duplicate_identities": ["00u_henry01", "00u_henry98-legacy"],
+      "finding": {
+        "type": "DUPLICATE_IDENTITY",
+        "status": "INVESTIGATION_REQUIRED",
+        "severity": "MEDIUM",
+        "recommendation": "MANUAL_REVIEW",
+        "evidence_completeness": "COMPLETE"
+      }
+    }
+  ],
+  "utilization_arithmetic": {
+    "_comment": [
+      "The granted/used capability sets, measured from the fixture set rather than",
+      "predicted. Phase 2's utilisation rule is a set computation over these two",
+      "numbers, so recording them here lets a threshold change be caught as a",
+      "specific disagreement ('Bob is 2/13, not 3/13') instead of a vague failure.",
+      "",
+      "`granted` comes from capabilities_for_permissions over each entitlement's",
+      "permission list; `used` is observed_capabilities intersected with it. Note",
+      "that an observed capability the user was never granted does not count toward",
+      "utilisation -- it is a different kind of finding.",
+      "",
+      "Read the ratios against the two personas they get wrong. Gina is 0/1 with",
+      "zero events and Ivan is 2/10 with four: both clear every numeric threshold",
+      "for HIGH_PRIVILEGE_LOW_USAGE, and both must reach INSUFFICIENT_EVIDENCE",
+      "instead because their coverage is not COMPLETE. Any implementation that",
+      "computes the ratio before consulting coverage accuses two innocent people",
+      "on the very first run."
+    ],
+    "threshold_low_utilization": 0.25,
+    "threshold_min_events": 3,
+    "by_user": {
+      "u_bob": {
+        "granted": 13,
+        "used": 2,
+        "ratio": 0.154,
+        "clears_confidence_floor": true,
+        "never_capabilities": ["EC2_WRITE", "FINANCE_READ", "IAM_READ", "IAM_WRITE", "KMS_READ", "KMS_WRITE", "LOGS_READ", "LOGS_WRITE", "S3_DELETE", "S3_WRITE", "STS_ASSUME_ROLE"]
+      },
+      "u_alice": {
+        "granted": 12,
+        "used": 0,
+        "ratio": 0.0,
+        "clears_confidence_floor": false,
+        "note": "Zero used out of twelve granted -- numerically the most idle account in the set, and the one that must not be touched.",
+        "never_capabilities": ["EC2_READ", "EC2_WRITE", "IAM_READ", "IAM_WRITE", "KMS_READ", "KMS_WRITE", "LOGS_READ", "LOGS_WRITE", "S3_DELETE", "S3_READ", "S3_WRITE", "STS_ASSUME_ROLE"]
+      },
+      "u_carol": {
+        "granted": 16,
+        "used": 4,
+        "ratio": 0.25,
+        "clears_confidence_floor": true,
+        "note": "Exactly at the threshold, and the comparison is strict (<), so this is not a low-usage case. Her finding has to come from the ghost-access rule instead, which is the point: two rules must not both claim her.",
+        "never_capabilities": ["EC2_WRITE", "FINANCE_READ", "IAM_READ", "IAM_WRITE", "KMS_READ", "KMS_WRITE", "LOGS_READ", "LOGS_WRITE", "REPO_ADMIN", "S3_DELETE", "S3_WRITE", "STS_ASSUME_ROLE"]
+      },
+      "u_dave": {
+        "granted": 4,
+        "used": 4,
+        "ratio": 1.0,
+        "clears_confidence_floor": true,
+        "never_capabilities": []
+      },
+      "u_erin": {
+        "granted": 17,
+        "used": 9,
+        "ratio": 0.529,
+        "clears_confidence_floor": true,
+        "note": "Above the threshold, so the utilisation rule alone finds nothing. Her finding depends on the *privileged* subset of what she never used.",
+        "never_capabilities": ["FINANCE_READ", "IAM_WRITE", "KMS_WRITE", "LOGS_WRITE", "ORG_ADMIN", "REPO_ADMIN", "S3_DELETE", "STS_ASSUME_ROLE"]
+      },
+      "u_frank": {
+        "granted": 3,
+        "used": 3,
+        "ratio": 1.0,
+        "clears_confidence_floor": true,
+        "never_capabilities": []
+      },
+      "u_gina": {
+        "granted": 1,
+        "used": 0,
+        "ratio": 0.0,
+        "clears_confidence_floor": false,
+        "never_capabilities": ["S3_READ"]
+      },
+      "u_henry": {
+        "granted": 4,
+        "used": 3,
+        "ratio": 0.75,
+        "clears_confidence_floor": true,
+        "never_capabilities": ["EC2_READ"]
+      },
+      "u_ivan": {
+        "granted": 10,
+        "used": 2,
+        "ratio": 0.2,
+        "clears_confidence_floor": true,
+        "never_capabilities": ["EC2_WRITE", "KMS_READ", "KMS_WRITE", "LOGS_READ", "LOGS_WRITE", "S3_DELETE", "S3_WRITE", "STS_ASSUME_ROLE"]
+      }
+    }
+  },
+  "dataset_level_expectations": {
+    "_comment": "Facts about the fixture set as a whole, asserted in Phase 1.",
+    "user_count": 9,
+    "entitlement_count": 15,
+    "aws_declared_records": 30,
+    "aws_parsed_records": 28,
+    "github_declared_records": 14,
+    "github_parsed_records": 14,
+    "rejected_records": {
+      "activity_logs.json": 2,
+      "idp_state.json": 1
+    },
+    "unattributable_actors": ["arn:aws:iam::123456789012:role/PlatformAdmin"],
+    "sources_declared_missing": ["proxy_zscaler"],
+    "everything_else_about_a_missing_source": "The declared-vs-parsed arithmetic must balance for every COMPLETE source. One malformed record must not read as a truncated export, because that would degrade every user of that source and destroy the findings the data fully supports."
+  }
+}

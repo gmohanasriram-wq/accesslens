@@ -1,0 +1,5 @@
+# Generated reports land here (auditor dossiers, exported findings).
+#
+# The directory is tracked so the path exists in a fresh clone; its contents are
+# run output and are gitignored. Nothing in Phase 1 writes to it -- the Phase 3
+# and Phase 4 exports will.

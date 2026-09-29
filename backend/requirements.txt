@@ -1,0 +1,20 @@
+# AccessLens backend dependencies.
+# Versions pinned to the set verified working on CPython 3.14 (all prebuilt wheels, no compilation).
+
+# --- API ---
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+
+# --- data / validation ---
+pydantic==2.13.5
+pydantic-settings==2.15.0
+python-dotenv==1.2.3
+
+# --- persistence ---
+# SQLAlchemy 2.x typed declarative. The database URL is configuration, not code:
+# swapping SQLite -> PostgreSQL is a DATABASE_URL change, not a model change.
+sqlalchemy==2.1.1
+
+# --- testing ---
+pytest==9.1.1
+httpx==0.28.1
