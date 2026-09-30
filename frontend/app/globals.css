@@ -1,1 +1,196 @@
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------------- *
+ * AccessLens — a register, not a dashboard.
+ *
+ * The subject is an audit workpaper. A reviewer reads this the way they read a
+ * control register: entries in a fixed order, each one numbered, each one
+ * citing the record it rests on. So the design borrows the workpaper's own
+ * materials rather than a SaaS dashboard's — ruled lines, a numbered margin,
+ * a serif for the prose an auditor would quote, and a monospace for the record
+ * itself (hashes, rule ids, timestamps, enum values are all evidence, and
+ * evidence is read character for character).
+ *
+ * The ground is a pale ledger stock rather than white: it is the colour of the
+ * paper these documents are printed on, and it keeps a page of dense findings
+ * from glowing.
+ *
+ * Colour carries exactly one meaning each and never carries it alone:
+ *
+ *   seal     oxblood — a credential outlived its account, or a conclusion the
+ *            evidence only partly supports. The colour of a sealing stamp, not
+ *            of an alert banner.
+ *   signal   ochre — a human needs to look at this.
+ *   verified pine  — a control is doing what it was configured to do (a
+ *            protected role held and unused by design, a window we can vouch
+ *            for). Deliberately calm: "nothing to do here" is not an alarm.
+ *
+ * Every one of those is also stated in words on the page. A reviewer with a
+ * colour deficiency, or reading a printout, must still be able to tell a
+ * critical finding from an informational one.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --paper: #eef1ec;
+  --card: #ffffff;
+  --card-sunk: #e7ebe5;
+
+  --ink: #161c19;
+  --muted: #5d6a63;
+  --faint: #8a968f;
+
+  --rule: #ccd4ca;
+  --rule-strong: #9fada0;
+
+  --seal: #8c2f1e;
+  --seal-ground: #f7eae6;
+  --signal: #8a6100;
+  --signal-ground: #f7efda;
+  --verified: #2f5c46;
+  --verified-ground: #e5efe9;
+
+  /* Text placed on a solid accent. Kept separate from `--paper` so the
+   * contrast of an accent chip does not depend on how dark the page is. */
+  --on-accent: #fbfcf9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --paper: #0e1411;
+    --card: #151d19;
+    --card-sunk: #1b2420;
+
+    --ink: #e7ece7;
+    --muted: #9aa79f;
+    --faint: #77857c;
+
+    --rule: #263029;
+    --rule-strong: #3d4a41;
+
+    --seal: #e08a72;
+    --seal-ground: #2b1714;
+    --signal: #d8ab5a;
+    --signal-ground: #2b2214;
+    --verified: #86bfa0;
+    --verified-ground: #14261d;
+
+    --on-accent: #101614;
+  }
+}
+
+/* `inline` so the utilities below emit `var(--paper)` rather than a snapshot of
+ * its light value, which is what lets one set of class names follow the theme. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-card-sunk: var(--card-sunk);
+
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --color-seal: var(--seal);
+  --color-seal-ground: var(--seal-ground);
+  --color-signal: var(--signal);
+  --color-signal-ground: var(--signal-ground);
+  --color-verified: var(--verified);
+  --color-verified-ground: var(--verified-ground);
+  --color-on-accent: var(--on-accent);
+
+  --font-display: Georgia, "Iowan Old Style", "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+/* Long machine strings — hashes, rule ids, capability lists — are the one thing
+ * on these pages that can be arbitrarily wide, and they are exactly the thing
+ * an auditor needs in full. They wrap mid-token rather than pushing the page
+ * sideways on a phone. */
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+/* Below `sm`, a four-column evidence table cannot fit a phone: measured at a
+ * true 390px the table is 679px against a 357px column, so the whole "Activity
+ * evidence" column sits behind a horizontal scroll. That column is where a
+ * coverage gap is named, and a gap nobody scrolls to is indistinguishable from
+ * a gap that was never reported — the precise confusion this product exists to
+ * avoid. So each row unfolds into a labelled block instead.
+ *
+ * The header is clipped rather than hidden, and the cells keep their explicit
+ * roles: a screen reader still gets a table with named columns, and the markup
+ * is one table at every width. The `data-label` a phone reads is the same
+ * string the `th` carries, so the two cannot drift. */
+@media (max-width: 639px) {
+  .stack-table,
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .stack-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .stack-table td {
+    padding-block: 0.5rem;
+  }
+
+  .stack-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  /* The first cell already names the person; a "PERSON" label above it would
+   * be the one label on the page that tells the reader nothing. */
+  .stack-table td:first-child::before {
+    display: none;
+  }
+}
+
+/* The review queue is read by tabbing down it, so the ring is not suppressed
+ * until a pointer is used: a keyboard user lands on an entry and has to be able
+ * to see which one. Applied on `:focus` rather than `:focus-visible` so the
+ * affordance does not depend on the browser's heuristic for deciding whether a
+ * focus "counts". */
+.focus-ring:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

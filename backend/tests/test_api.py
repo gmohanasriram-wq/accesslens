@@ -154,9 +154,19 @@ def test_no_endpoint_can_change_anyones_access(client: TestClient) -> None:
     ]
     assert not mutating, f"AccessLens must not expose a write route; found {mutating}"
 
-    assert {path for _, path in routes} == {"/api/health", "/api/personas"}
+    assert {path for _, path in routes} == {
+        "/api/health",
+        "/api/personas",
+        "/api/analysis",
+        "/api/analysis/findings/{finding_id}",
+    }
 
 
 def test_an_unknown_route_is_a_404_not_an_empty_result(client: TestClient) -> None:
-    """A missing endpoint must not look like a persona with nothing to report."""
-    assert client.get("/api/analysis").status_code == 404
+    """A missing endpoint must not look like a persona with nothing to report.
+
+    The example is deliberately the route a plausible product would have and
+    this one must not: a reviewer's instinct on seeing a finding is "can I act
+    on it here?", and the honest answer has to be a 404 rather than a form.
+    """
+    assert client.get("/api/access/revoke").status_code == 404

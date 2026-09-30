@@ -10,14 +10,34 @@ Returning only an event count would let a client render "0 events" for a user we
 never actually looked at, which is the exact conflation the domain model exists
 to prevent -- so coverage and its gaps are part of the contract rather than
 something a client has to ask for separately.
+
+**The findings contracts are the one place this file does *not* reshape.** The
+analysis routes re-serve :class:`~app.schemas.domain.finding.Finding` verbatim
+inside :class:`FindingDossierResponse`, and :class:`FindingSummary` drops exactly
+one field (``evidence``) and adds exactly two (``subject``, ``evidence_count``).
+No field is renamed and no enum is re-spelled. A projection layer here would
+create a second name for every fact -- ``severity`` against ``risk``,
+``type`` against ``finding_type`` -- and the queue and the dossier could then
+disagree about a finding with nothing failing. The engine's word for a thing is
+the word an auditor reads.
 """
 
 from __future__ import annotations
 
 from pydantic import AwareDatetime, Field
 
-from app.core.enums import Coverage, UsageObservation
+from app.core.enums import (
+    Coverage,
+    EvidenceCompleteness,
+    FindingStatus,
+    FindingType,
+    Recommendation,
+    RiskLevel,
+    Severity,
+    UsageObservation,
+)
 from app.core.time import UTCModel
+from app.schemas.domain.finding import Finding
 
 __all__ = [
     "HealthResponse",
@@ -26,6 +46,10 @@ __all__ = [
     "ActivitySummary",
     "PersonaSummary",
     "PersonaListResponse",
+    "FindingSubject",
+    "FindingSummary",
+    "AnalysisResponse",
+    "FindingDossierResponse",
 ]
 
 
@@ -105,3 +129,89 @@ class PersonaListResponse(UTCModel):
     analysis_as_of: AwareDatetime
     generated_at: AwareDatetime | None = None
     personas: list[PersonaSummary]
+
+
+class FindingSubject(UTCModel):
+    """The person a finding is about, in the queue's compact form.
+
+    Deliberately not a :class:`PersonaSummary`. A queue of eight rows is read per
+    person, so the row has to say *who* without carrying their identities,
+    entitlements and coverage nine times over -- that is what the dossier is for,
+    and the dossier fetches the full summary from the same projection
+    ``/api/personas`` uses, so the two cannot disagree.
+    """
+
+    id: str
+    username: str
+    name: str
+    department: str
+    employment_status: str
+    termination_date: AwareDatetime | None = None
+
+
+class FindingSummary(UTCModel):
+    """A queue row: the finding without its payload, plus its subject.
+
+    Every field except ``subject`` and ``evidence_count`` is the engine's own,
+    carrying the engine's own name. ``evidence`` is the one thing dropped, and
+    ``evidence_count`` is the one thing added in its place -- a count is enough
+    for a queue row, and shipping sixty evidence records in the list would make
+    the list's contract depend on the detail's.
+    """
+
+    id: str
+    user_id: str
+    type: FindingType
+    severity: Severity
+    status: FindingStatus
+    risk_level: RiskLevel
+    summary: str
+    recommendation: Recommendation
+    evidence_completeness: EvidenceCompleteness
+    rules_triggered: list[str] = Field(default_factory=list)
+    usage: UsageObservation | None = None
+    created_at: AwareDatetime
+
+    evidence_count: int
+    subject: FindingSubject
+
+
+class AnalysisResponse(UTCModel):
+    """The review queue, with the provenance needed to cite it.
+
+    ``content_hash`` and ``analysis_as_of`` are the same values
+    :class:`PersonaListResponse` reports, because they are read off the same
+    assembled dataset. Two views of one dataset must not be able to disagree
+    about which dataset they are describing.
+
+    ``dataset_fingerprint`` is carried alongside ``content_hash`` because they
+    answer different questions: the content hash names the *input files*, which
+    is what makes a re-ingest skippable, while the fingerprint names the
+    *normalized facts*, which is what a finding cites. ``rejections`` is here
+    rather than left to ``/api/health`` because three discarded records is a
+    fact about why a finding may be absent, not a fact about the plumbing.
+    """
+
+    content_hash: str
+    dataset_fingerprint: str
+    analysis_as_of: AwareDatetime
+    window_start: AwareDatetime
+    window_end: AwareDatetime
+    rejections: int
+    findings: list[FindingSummary]
+
+
+class FindingDossierResponse(UTCModel):
+    """One finding as a citable record: the finding, its subject, its siblings.
+
+    ``finding`` is the domain object unchanged, evidence included. ``subject``
+    is the :class:`PersonaSummary` ``/api/personas`` already returns, reused
+    rather than re-invented -- the identities, entitlements, coverage and gaps
+    the forensic view needs already exist in that shape. ``related_findings``
+    carries the person's *other* findings, because Carol carries two facts about
+    herself and a dossier that showed one would imply she carries one.
+    """
+
+    finding: Finding
+    subject: PersonaSummary
+    related_findings: list[FindingSummary] = Field(default_factory=list)

@@ -8,7 +8,14 @@
  * CORS surface and no backend address exposed to a reviewer's browser.
  */
 
-import type { HealthResponse, PersonaListResponse } from "@/types/api";
+import { cache } from "react";
+
+import type {
+  AnalysisResponse,
+  FindingDossierResponse,
+  HealthResponse,
+  PersonaListResponse,
+} from "@/types/api";
 
 const BASE_URL = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -48,10 +55,38 @@ async function get<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function fetchHealth(): Promise<HealthResponse> {
-  return get<HealthResponse>("/api/health");
-}
+/*
+ * Every fetcher below is wrapped in React's `cache`, which dedupes *within a
+ * single render pass*. Two components on one page asking the same question --
+ * the shell's provenance strip and the page body both want the persona list --
+ * should cost one request, and the shell is rendered on every route, so this is
+ * the common case rather than the exception. It is per-request, so it does not
+ * interfere with the `revalidate` window above.
+ */
 
-export function fetchPersonas(): Promise<PersonaListResponse> {
+export const fetchHealth = cache((): Promise<HealthResponse> => {
+  return get<HealthResponse>("/api/health");
+});
+
+export const fetchPersonas = cache((): Promise<PersonaListResponse> => {
   return get<PersonaListResponse>("/api/personas");
-}
+});
+
+export const fetchAnalysis = cache((): Promise<AnalysisResponse> => {
+  return get<AnalysisResponse>("/api/analysis");
+});
+
+/**
+ * One finding's full dossier.
+ *
+ * A 404 is not an error to render here -- it is the answer "there is no such
+ * record", and the page turns it into `notFound()`. So the `ApiError` is left
+ * for the caller to inspect rather than swallowed.
+ */
+export const fetchDossier = cache(
+  (findingId: string): Promise<FindingDossierResponse> => {
+    return get<FindingDossierResponse>(
+      `/api/analysis/findings/${encodeURIComponent(findingId)}`,
+    );
+  },
+);
