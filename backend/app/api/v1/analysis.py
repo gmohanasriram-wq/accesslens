@@ -28,6 +28,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.ai import (
+    StructuredInvestigationResult,
+    build_investigation_packet,
+    investigate_finding,
+)
 from app.api.deps import DatasetDep, SessionDep, SettingsDep
 from app.api.read_models import build_personas, find_persona, finding_subject
 from app.engine import analyze
@@ -127,6 +132,38 @@ def get_finding(
         subject=subject,
         related_findings=related,
     )
+
+
+@router.get(
+    "/analysis/findings/{finding_id}/investigation",
+    response_model=StructuredInvestigationResult,
+)
+def get_finding_investigation(
+    finding_id: str,
+    session: SessionDep,
+    dataset: DatasetDep,
+    settings: SettingsDep,
+) -> StructuredInvestigationResult:
+    """One finding's AI forensic investigation dossier.
+
+    Deterministic and provider-agnostic. Produces structured forensic analysis,
+    separating verified facts from inferences and drafting reviewer questions.
+    404 for an unknown id.
+    """
+    findings = analyze(dataset, settings)
+    finding = next((f for f in findings if f.id == finding_id), None)
+    if finding is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"no finding with id {finding_id!r}",
+        )
+
+    subject = find_persona(session, dataset, finding.user_id)
+    if subject is None:  # pragma: no cover - the dataset and the table agree
+        raise _unknown_subject(finding)
+
+    packet = build_investigation_packet(finding, subject, dataset, settings)
+    return investigate_finding(packet)
 
 
 def _subject(

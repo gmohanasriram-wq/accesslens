@@ -45,4 +45,28 @@ downstream of it.
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from app.ai.investigator import investigate_finding
+from app.ai.packet import InvestigationPacket, build_investigation_packet
+from app.ai.provider import LLMProvider, MockLLMProvider, generate_deterministic_mock_result
+from app.ai.safety import SafetyViolationError, validate_investigation_safety
+from app.ai.schemas import (
+    EvidenceCitation,
+    FactVsInference,
+    InvestigationStatus,
+    StructuredInvestigationResult,
+)
+
+__all__ = [
+    "InvestigationStatus",
+    "EvidenceCitation",
+    "FactVsInference",
+    "StructuredInvestigationResult",
+    "InvestigationPacket",
+    "build_investigation_packet",
+    "LLMProvider",
+    "MockLLMProvider",
+    "generate_deterministic_mock_result",
+    "SafetyViolationError",
+    "validate_investigation_safety",
+    "investigate_finding",
+]

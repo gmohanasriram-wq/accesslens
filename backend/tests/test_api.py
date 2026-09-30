@@ -159,6 +159,7 @@ def test_no_endpoint_can_change_anyones_access(client: TestClient) -> None:
         "/api/personas",
         "/api/analysis",
         "/api/analysis/findings/{finding_id}",
+        "/api/analysis/findings/{finding_id}/investigation",
     }
 
 
