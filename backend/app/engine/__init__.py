@@ -1,12 +1,17 @@
 """The deterministic security engine.
 
-Phase 1 fixed the boundary; Phase 2 is filling it in. Rule D (ghost access)
-lives in :mod:`app.engine.ghost_access` and is tested in
-``tests/test_rule_d.py``. Rules A, B and C are still to come, so ``analyze()``
-is deliberately not defined here yet -- a sweep that returns only the ghost
-findings would be indistinguishable from a sweep that found nothing else, and
-the caller of an access review must never have to guess which of those they are
-looking at. See ``README.md`` in this package.
+Phase 1 fixed the boundary; Phase 2 is filling it in, one rule at a time. Rule D
+(ghost access) lives in :mod:`app.engine.ghost_access`, tested in
+``tests/test_rule_d.py``. Rule A -- privilege utilisation, which also emits the
+low-usage and break-glass findings the blueprint assigns to Rules B and C --
+lives in :mod:`app.engine.utilization`, tested in ``tests/test_rule_a.py``.
+
+``analyze()`` is deliberately still not defined here, because the rule set is
+still incomplete: the rarely-used-privileged-permission and duplicate-identity
+findings have no implementation, and a sweep that quietly omitted them would be
+indistinguishable from a sweep that found nothing else. The caller of an access
+review must never have to guess which of those they are looking at. See
+``README.md`` in this package for what exists, what does not, and why.
 
 The contract, once all four rules exist::
 

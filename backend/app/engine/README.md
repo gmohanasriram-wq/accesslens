@@ -7,25 +7,46 @@ Phase 1 fixed the boundary; Phase 2 fills it in, one rule at a time.
 | Rule | Module | State |
 |---|---|---|
 | D — ghost access | `ghost_access.py` | **implemented**, tested in `tests/test_rule_d.py` |
-| A — privilege utilization | — | not started |
-| B — low-usage privileged access | — | not started |
-| C — break-glass protection | — | not started |
+| A — privilege utilization | `utilization.py` | **implemented**, tested in `tests/test_rule_a.py` |
+| B — low-usage privileged access | — | finding behaviour delivered by Rule A (see below) |
+| C — break-glass protection | — | finding behaviour delivered by Rule A (see below) |
 
-**`analyze()` is deliberately absent, and its absence is the honest answer.**
-The contract below describes the finished engine. Writing it now, with three of
-four rules missing, would produce a function that returns a *complete-looking*
-finding list which silently omits low-usage, break-glass and privilege findings
-— and a caller cannot tell "no findings" from "that rule does not exist yet".
-Rule D is therefore called directly:
+### Where Rules B and C went
+
+The blueprint describes three privilege findings — low-privilege-usage (A),
+rarely-used privileged permission (B) and break-glass protection (C) — as three
+rules. They are one decision, and splitting them is how they come to disagree:
+all three compare capabilities granted against capabilities observed, and the
+difference is only which way the answer is allowed to lean. `utilization.py`
+therefore answers all three at once, and the blueprint's B and C *findings* are
+emitted from it:
+
+* `HIGH_PRIVILEGE_LOW_USAGE` — the review-required case (Bob);
+* `PROTECTED_BREAK_GLASS` — the do-nothing case (Alice);
+* `INSUFFICIENT_EVIDENCE` — the cannot-say case (Gina, Ivan).
+
+Not implemented, and deliberately not quietly folded in: Erin's
+`RARELY_USED_PRIVILEGED_PERMISSION` (a per-permission judgement, a different
+unit of analysis from the capability sets this rule compares) and Henry's
+`DUPLICATE_IDENTITY` (an identity-resolution finding, not a usage one).
+
+**`analyze()` is still deliberately absent, and its absence is still the honest
+answer.** The contract below describes the finished engine. Writing it now would
+produce a function that returns a *complete-looking* finding list which silently
+omits the Erin and Henry findings above — and a caller cannot tell "no findings"
+from "that rule does not exist yet". The rules are therefore called directly:
 
 ```python
 from app.engine.ghost_access import detect_ghost_access
+from app.engine.utilization import detect_low_utilization
 
-findings = detect_ghost_access(dataset, settings)
+findings = detect_ghost_access(dataset, settings) + detect_low_utilization(
+    dataset, settings
+)
 ```
 
-`analyze()` lands when Rules A, B and C do, and it becomes the only caller of
-each rule.
+`analyze()` lands when the rule set is complete, and it becomes the only caller
+of each rule.
 
 ## The contract
 
