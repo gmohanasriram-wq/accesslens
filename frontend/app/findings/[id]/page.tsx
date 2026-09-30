@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { Exhibit } from "@/components/Exhibit";
+import { InvestigationPanel } from "@/components/InvestigationPanel";
+import { ReviewerDecisionCard } from "@/components/ReviewerDecisionCard";
 import { SubjectPanel } from "@/components/SubjectPanel";
 import { ErrorPanel, Field, Panel, Stamp, describeError } from "@/components/ui";
-import { ApiError, fetchDossier } from "@/lib/api";
+import { ApiError, fetchDossier, fetchInvestigation } from "@/lib/api";
 import { severityInk, statusStamp } from "@/lib/display";
 import { formatStamp } from "@/lib/format";
-import type { FindingDossierResponse } from "@/types/api";
+import type { FindingDossierResponse, StructuredInvestigationResult } from "@/types/api";
 
 /**
  * `/findings/[id]` — the auditor dossier.
@@ -36,8 +38,10 @@ export default async function DossierPage(
   const { id } = await props.params;
 
   let dossier: FindingDossierResponse;
+  let investigation: StructuredInvestigationResult | null = null;
   try {
     dossier = await fetchDossier(id);
+    investigation = await fetchInvestigation(id);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     return (
@@ -128,6 +132,16 @@ export default async function DossierPage(
         >
           <SubjectPanel persona={subject} />
         </Panel>
+
+        {investigation ? (
+          <InvestigationPanel investigation={investigation} />
+        ) : null}
+
+        <ReviewerDecisionCard
+          finding={finding}
+          subject={subject}
+          investigation={investigation}
+        />
 
         <Panel
           title="Exhibits"

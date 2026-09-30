@@ -15,6 +15,7 @@ import type {
   FindingDossierResponse,
   HealthResponse,
   PersonaListResponse,
+  StructuredInvestigationResult,
 } from "@/types/api";
 
 const BASE_URL = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -90,3 +91,21 @@ export const fetchDossier = cache(
     );
   },
 );
+
+/**
+ * Structured AI investigation dossier for a finding.
+ *
+ * Uses the read-only AI investigation endpoint. Returns null if unavailable or error.
+ */
+export const fetchInvestigation = cache(
+  async (findingId: string): Promise<StructuredInvestigationResult | null> => {
+    try {
+      return await get<StructuredInvestigationResult>(
+        `/api/analysis/findings/${encodeURIComponent(findingId)}/investigation`,
+      );
+    } catch {
+      return null;
+    }
+  },
+);
+

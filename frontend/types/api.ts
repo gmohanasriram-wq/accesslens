@@ -221,3 +221,55 @@ export interface FindingDossierResponse {
   subject: PersonaSummary;
   related_findings: FindingSummary[];
 }
+
+/* ------------------------------------------------------------------------- *
+ * Phase 4 AI Investigation & Human Adjudication
+ * ------------------------------------------------------------------------- */
+
+export type InvestigationStatus =
+  | "COMPLETED"
+  | "INSUFFICIENT_EVIDENCE"
+  | "ERROR";
+
+export interface EvidenceCitation {
+  evidence_id: string;
+  relevance: string;
+}
+
+export interface FactVsInference {
+  verified_facts: string[];
+  inferences: string[];
+}
+
+export interface StructuredInvestigationResult {
+  finding_id: string;
+  user_id: string;
+  status: InvestigationStatus;
+  factual_summary: string;
+  supporting_evidence: EvidenceCitation[];
+  uncertainty_and_contradictions: string[];
+  missing_or_unverified_evidence: string[];
+  evidence_vs_inference: FactVsInference;
+  adversarial_questions: string[];
+  investigation_next_steps: string[];
+  provider_info: string;
+  generated_at: string;
+}
+
+export type RecommendationDecision =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "DEFERRED";
+
+export interface ExportableAuditorDossier {
+  dossier_version: string;
+  finding: Finding;
+  subject: PersonaSummary;
+  investigation: StructuredInvestigationResult | null;
+  reviewer_decision: RecommendationDecision;
+  reviewer_rationale: string;
+  decided_at: string | null;
+  exported_at: string;
+}
+
