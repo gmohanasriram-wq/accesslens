@@ -1,8 +1,31 @@
-# Phase 2 — the deterministic engine (not yet implemented)
+# Phase 2 — the deterministic engine
 
-This package is intentionally empty in Phase 1. It holds the security rules that
-produce findings, and Phase 1's job was to fix the boundary before anyone writes
-them.
+Phase 1 fixed the boundary; Phase 2 fills it in, one rule at a time.
+
+## Status
+
+| Rule | Module | State |
+|---|---|---|
+| D — ghost access | `ghost_access.py` | **implemented**, tested in `tests/test_rule_d.py` |
+| A — privilege utilization | — | not started |
+| B — low-usage privileged access | — | not started |
+| C — break-glass protection | — | not started |
+
+**`analyze()` is deliberately absent, and its absence is the honest answer.**
+The contract below describes the finished engine. Writing it now, with three of
+four rules missing, would produce a function that returns a *complete-looking*
+finding list which silently omits low-usage, break-glass and privilege findings
+— and a caller cannot tell "no findings" from "that rule does not exist yet".
+Rule D is therefore called directly:
+
+```python
+from app.engine.ghost_access import detect_ghost_access
+
+findings = detect_ghost_access(dataset, settings)
+```
+
+`analyze()` lands when Rules A, B and C do, and it becomes the only caller of
+each rule.
 
 ## The contract
 

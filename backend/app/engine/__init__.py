@@ -1,10 +1,14 @@
 """The deterministic security engine.
 
-Empty by design in Phase 1. This module is the boundary, and the boundary is
-the part that had to be fixed first: the interface below is what Phase 2
-implements, and what Phase 1's fixtures and test oracles are written against.
+Phase 1 fixed the boundary; Phase 2 is filling it in. Rule D (ghost access)
+lives in :mod:`app.engine.ghost_access` and is tested in
+``tests/test_rule_d.py``. Rules A, B and C are still to come, so ``analyze()``
+is deliberately not defined here yet -- a sweep that returns only the ghost
+findings would be indistinguishable from a sweep that found nothing else, and
+the caller of an access review must never have to guess which of those they are
+looking at. See ``README.md`` in this package.
 
-The contract::
+The contract, once all four rules exist::
 
     analyze(dataset: InMemoryDataset, settings: Settings) -> list[Finding]
 
