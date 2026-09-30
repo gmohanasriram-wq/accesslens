@@ -7,18 +7,23 @@ low-usage and break-glass findings the blueprint assigns to its "Rules B and C"
 -- lives in :mod:`app.engine.utilization`, tested in ``tests/test_rule_a.py``.
 Rule B (a rarely-exercised privileged capability, which is a different question
 from low utilisation and fires exactly where Rule A declines) lives in
-:mod:`app.engine.privileged_usage`, tested in ``tests/test_rule_b.py``.
+:mod:`app.engine.privileged_usage`, tested in ``tests/test_rule_b.py``. Rule C
+(duplicate identity, a directory fact rather than a usage one) lives in
+:mod:`app.engine.duplicate_identity`, tested in ``tests/test_rule_c.py``.
 
-``analyze()`` is deliberately still not defined here, because the rule set is
-still incomplete: the duplicate-identity finding has no implementation, and a
-sweep that quietly omitted it would be indistinguishable from a sweep that found
-nothing else. The caller of an access review must never have to guess which of
-those they are looking at. See ``README.md`` in this package for what exists,
-what does not, and why.
-
-The contract, once all four rules exist::
+The rule set is now complete, so the sweep it was waiting for exists::
 
     analyze(dataset: InMemoryDataset, settings: Settings) -> list[Finding]
+
+:func:`analyze` lives in :mod:`app.engine.analyzer` and is re-exported here. It
+is the only supported way to obtain findings. Until it existed the four rules
+were concatenated by hand by their callers, which meant a caller could not tell
+a complete finding list from one that was missing a whole class of finding --
+the argument for leaving it out is the argument for it being the single entry
+point now that it can honestly be complete.
+
+Individual rule modules stay importable, because a rule is tested in isolation
+by calling it. That is a test-time affordance, not a production one.
 
 Why it is a pure function, and why that is a security property rather than a
 style preference:
@@ -59,4 +64,6 @@ Phase 2 implements the rule set against the oracles in
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from app.engine.analyzer import analyze
+
+__all__: list[str] = ["analyze"]

@@ -9,6 +9,8 @@ Phase 1 fixed the boundary; Phase 2 fills it in, one rule at a time.
 | D — ghost access | `ghost_access.py` | **implemented**, tested in `tests/test_rule_d.py` |
 | A — privilege utilization | `utilization.py` | **implemented**, tested in `tests/test_rule_a.py` |
 | B — rarely-used privileged permission | `privileged_usage.py` | **implemented**, tested in `tests/test_rule_b.py` |
+| C — duplicate identity | `duplicate_identity.py` | **implemented**, tested in `tests/test_rule_c.py` |
+| — the unified sweep | `analyzer.py` | **implemented**, tested in `tests/test_analyzer.py` |
 
 Note the collision in the blueprint's own numbering. Blueprint §8's "Rule B" is
 *low-usage* privileged access and §8's "Rule C" is break-glass protection; both
@@ -41,35 +43,53 @@ overlap in it, and it reports independently of the others: Carol carries a
 `GHOST_ACCESS` finding and a `RARELY_USED_PRIVILEGED_PERMISSION` finding at the
 same time, because they are two different facts about her.
 
-Still not implemented: Henry's `DUPLICATE_IDENTITY`, an identity-resolution
-finding rather than a usage one.
+`duplicate_identity.py` is a third kind of rule again, and the only one that reads
+no activity at all. Henry holds two Okta accounts sharing one login; the
+directory cannot say which of them is the one in use, so nothing he did can be
+attributed to a single principal. Because the claim is about the directory and
+not about telemetry, coverage gating has nothing to say about it — a truncated
+CloudTrail export must not silence a directory defect.
 
-**`analyze()` is still deliberately absent, and its absence is still the honest
-answer.** The contract below describes the finished engine. Writing it now would
-produce a function that returns a *complete-looking* finding list which silently
-omits the Henry finding above — and a caller cannot tell "no findings" from
-"that rule does not exist yet". The rules are therefore called directly:
-
-```python
-from app.engine.ghost_access import detect_ghost_access
-from app.engine.privileged_usage import detect_rarely_used_privileged_permissions
-from app.engine.utilization import detect_low_utilization
-
-findings = (
-    detect_ghost_access(dataset, settings)
-    + detect_low_utilization(dataset, settings)
-    + detect_rarely_used_privileged_permissions(dataset, settings)
-)
-```
-
-`analyze()` lands when the rule set is complete, and it becomes the only caller
-of each rule.
-
-## The contract
+## The entry point
 
 ```python
-def analyze(dataset: InMemoryDataset, settings: Settings) -> list[Finding]: ...
+from app.engine import analyze
+
+findings = analyze(dataset, settings)
 ```
+
+`analyze()` lives in `analyzer.py` and is re-exported from the package. It is the
+only supported way to obtain findings: calling a rule directly returns a list
+that looks complete and is not, which is exactly the ambiguity that kept this
+function out of the package until the rule set was finished. The rule modules
+stay importable because a rule is tested in isolation by calling it, but that is
+a test-time affordance rather than a production one.
+
+Four things it pins, all of them places a sweep goes wrong quietly:
+
+- **Ordered output.** Findings come back sorted by `(user_id, severity
+  descending, finding.id)`. A review is read per person, so a person's findings
+  stay together, worse-first. The severity rank is written out explicitly,
+  because `Severity` is a `StrEnum` and orders alphabetically by value —
+  `CRITICAL, HIGH, INFO, LOW, MEDIUM` — which is not the order anyone means. The
+  oracle file asserts no ordering, so this is the engine's own presentation
+  choice.
+- **No deduplication.** Findings are per (rule, subject), not per person: Carol
+  carries a ghost-access finding and a rarely-used-permission finding at once
+  because they are two facts. Dropping a duplicate would turn a rule bug into a
+  *missing* finding, so a colliding id raises `ValueError` naming both ids.
+- **Errors propagate.** No `try`/`except`. A caught rule exception produces a
+  partial list that looks complete — the same indistinguishability that made a
+  premature `analyze()` dishonest.
+- **No re-stamping.** Each rule sets `created_at` from `settings`; the sweep
+  never touches it. Re-stamping would mutate rule-owned data and hide a rule
+  that had stopped deriving its timestamp from configuration.
+
+Execution order is A → B → C → D, fixed for reproducibility and carrying no
+meaning: all four rules are pure functions of the same immutable dataset and
+share no state, so no ordering can change the result. Each rule is called through
+its own module, which keeps "which module owns which rule" visible at the call
+site.
 
 Pure. No database session, no HTTP client, no clock. Everything a rule may
 consider is reachable from `dataset`; everything that decides how strict a rule
@@ -124,4 +144,5 @@ accident.
 
 Every scenario in blueprint §16 produces its expected finding, the oracle file
 is the assertion rather than a description, and the engine's own tests run with
-no database in the loop.
+no database in the loop. Reached in production through `analyze()`, which is the
+only caller of each rule.
