@@ -29,7 +29,7 @@ from typing import Literal
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.enums import ActivitySource
+from app.core.enums import ActivitySource, Capability
 from app.core.time import ensure_utc, utcnow
 
 # <repo>/backend/app/core/config.py -> <repo>
@@ -90,6 +90,31 @@ class Settings(BaseSettings):
     critical_risk_entitlement_roles: tuple[str, ...] = (
         "AdministratorAccess",
         "org:admin",
+    )
+
+    # --- privileged capabilities (Rule B) --------------------------------- #
+    # Which capabilities are dangerous enough that never exercising one is
+    # worth a reviewer's attention, regardless of how much else the holder
+    # does with the grant. Policy, not fact: "S3_DELETE is destructive" is a
+    # decision an organisation makes and must be able to revisit without a
+    # release, exactly like `protected_role_patterns`.
+    #
+    # The distinction this exists to draw is between low usage and narrow
+    # usage. A grant can be used constantly and still leave its destructive
+    # half untouched, and a ratio cannot see that because the ratio is one
+    # number over the whole set.
+    #
+    # Kept separate from `high_risk_entitlement_roles`, which classifies a
+    # ROLE by name and feeds `Entitlement.risk_level`. This classifies a
+    # CAPABILITY, so it travels across vendors: REPO_ADMIN means the same
+    # thing however it was granted.
+    privileged_capabilities: tuple[Capability, ...] = (
+        Capability.IAM_WRITE,
+        Capability.KMS_WRITE,
+        Capability.LOGS_WRITE,
+        Capability.S3_DELETE,
+        Capability.REPO_ADMIN,
+        Capability.ORG_ADMIN,
     )
 
     # --- break-glass / protection (Rule C) -------------------------------- #

@@ -3,15 +3,18 @@
 Phase 1 fixed the boundary; Phase 2 is filling it in, one rule at a time. Rule D
 (ghost access) lives in :mod:`app.engine.ghost_access`, tested in
 ``tests/test_rule_d.py``. Rule A -- privilege utilisation, which also emits the
-low-usage and break-glass findings the blueprint assigns to Rules B and C --
-lives in :mod:`app.engine.utilization`, tested in ``tests/test_rule_a.py``.
+low-usage and break-glass findings the blueprint assigns to its "Rules B and C"
+-- lives in :mod:`app.engine.utilization`, tested in ``tests/test_rule_a.py``.
+Rule B (a rarely-exercised privileged capability, which is a different question
+from low utilisation and fires exactly where Rule A declines) lives in
+:mod:`app.engine.privileged_usage`, tested in ``tests/test_rule_b.py``.
 
 ``analyze()`` is deliberately still not defined here, because the rule set is
-still incomplete: the rarely-used-privileged-permission and duplicate-identity
-findings have no implementation, and a sweep that quietly omitted them would be
-indistinguishable from a sweep that found nothing else. The caller of an access
-review must never have to guess which of those they are looking at. See
-``README.md`` in this package for what exists, what does not, and why.
+still incomplete: the duplicate-identity finding has no implementation, and a
+sweep that quietly omitted it would be indistinguishable from a sweep that found
+nothing else. The caller of an access review must never have to guess which of
+those they are looking at. See ``README.md`` in this package for what exists,
+what does not, and why.
 
 The contract, once all four rules exist::
 
