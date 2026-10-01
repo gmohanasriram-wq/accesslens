@@ -8,22 +8,26 @@ from __future__ import annotations
 import logging
 
 from app.ai.packet import InvestigationPacket
-from app.ai.provider import LLMProvider, MockLLMProvider
-from app.ai.safety import validate_investigation_safety
+from app.ai.provider import LLMProvider, MockLLMProvider, get_provider
+from app.ai.safety import validate_chat_safety, validate_investigation_safety
 from app.ai.schemas import (
+    ChatMessage,
     FactVsInference,
+    InvestigationChatResponse,
     InvestigationStatus,
     StructuredInvestigationResult,
 )
+from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["investigate_finding"]
+__all__ = ["investigate_finding", "investigate_chat"]
 
 
 def investigate_finding(
     packet: InvestigationPacket,
     provider: LLMProvider | None = None,
+    settings: Settings | None = None,
 ) -> StructuredInvestigationResult:
     """Run an AI investigation for a finding packet.
 
@@ -32,7 +36,7 @@ def investigate_finding(
     a graceful ERROR status result rather than raising unhandled exceptions.
     """
     if provider is None:
-        provider = MockLLMProvider()
+        provider = get_provider(settings=settings)
 
     try:
         result = provider.investigate(packet)
@@ -63,3 +67,50 @@ def investigate_finding(
             provider_info="error-fallback",
             generated_at=packet.analysis_as_of,
         )
+
+
+def investigate_chat(
+    packet: InvestigationPacket,
+    message: str,
+    history: list[ChatMessage],
+    provider: LLMProvider | None = None,
+    settings: Settings | None = None,
+) -> InvestigationChatResponse:
+    """Run an interactive chat turn for a finding packet.
+
+    Executes the provider, validates safety invariants, and returns an
+    InvestigationChatResponse. If NVIDIA times out, errors, or fails,
+    it falls back deterministically to MockLLMProvider with an explicit
+    fallback indicator rather than failing.
+    """
+    if provider is None:
+        provider = get_provider(settings=settings)
+
+    try:
+        result = provider.chat(packet, message, history)
+    except Exception as exc:
+        logger.warning(
+            "Primary chat provider (%s) failed for finding %s: %s; falling back to deterministic local engine",
+            type(provider).__name__,
+            packet.finding.id,
+            exc,
+        )
+        fallback_provider = MockLLMProvider()
+        result = fallback_provider.chat(packet, message, history)
+        result.is_fallback = True
+        result.provider_info = "fallback:deterministic-mock"
+
+    try:
+        validate_chat_safety(result.reply, result.citations, packet)
+    except Exception as safety_exc:
+        logger.warning(
+            "Chat safety validation caught an invariant violation: %s. Sanitizing response.",
+            safety_exc,
+        )
+        fallback_provider = MockLLMProvider()
+        result = fallback_provider.chat(packet, message, history)
+        result.is_fallback = True
+        result.provider_info = "fallback:deterministic-mock (safety-sanitized)"
+
+    return result
+

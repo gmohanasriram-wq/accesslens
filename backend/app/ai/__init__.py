@@ -45,13 +45,31 @@ downstream of it.
 
 from __future__ import annotations
 
-from app.ai.investigator import investigate_finding
+from app.ai.investigator import investigate_chat, investigate_finding
+from app.ai.nvidia_provider import (
+    NEMOTRON_CHAT_SYSTEM_PROMPT,
+    NEMOTRON_SYSTEM_PROMPT,
+    NvidiaLLMProvider,
+)
 from app.ai.packet import InvestigationPacket, build_investigation_packet
-from app.ai.provider import LLMProvider, MockLLMProvider, generate_deterministic_mock_result
-from app.ai.safety import SafetyViolationError, validate_investigation_safety
+from app.ai.provider import (
+    LLMProvider,
+    MockLLMProvider,
+    generate_deterministic_mock_chat,
+    generate_deterministic_mock_result,
+    get_provider,
+)
+from app.ai.safety import (
+    SafetyViolationError,
+    validate_chat_safety,
+    validate_investigation_safety,
+)
 from app.ai.schemas import (
+    ChatMessage,
     EvidenceCitation,
     FactVsInference,
+    InvestigationChatRequest,
+    InvestigationChatResponse,
     InvestigationStatus,
     StructuredInvestigationResult,
 )
@@ -61,12 +79,23 @@ __all__ = [
     "EvidenceCitation",
     "FactVsInference",
     "StructuredInvestigationResult",
+    "ChatMessage",
+    "InvestigationChatRequest",
+    "InvestigationChatResponse",
     "InvestigationPacket",
     "build_investigation_packet",
     "LLMProvider",
     "MockLLMProvider",
+    "NvidiaLLMProvider",
+    "NEMOTRON_SYSTEM_PROMPT",
+    "NEMOTRON_CHAT_SYSTEM_PROMPT",
     "generate_deterministic_mock_result",
+    "generate_deterministic_mock_chat",
+    "get_provider",
     "SafetyViolationError",
     "validate_investigation_safety",
+    "validate_chat_safety",
     "investigate_finding",
+    "investigate_chat",
 ]
+

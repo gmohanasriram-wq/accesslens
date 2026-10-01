@@ -10,10 +10,14 @@ import re
 from typing import Sequence
 
 from app.ai.packet import InvestigationPacket
-from app.ai.schemas import StructuredInvestigationResult
+from app.ai.schemas import EvidenceCitation, StructuredInvestigationResult
 from app.core.enums import Coverage, EvidenceCompleteness
 
-__all__ = ["SafetyViolationError", "validate_investigation_safety"]
+__all__ = [
+    "SafetyViolationError",
+    "validate_investigation_safety",
+    "validate_chat_safety",
+]
 
 
 class SafetyViolationError(ValueError):
@@ -156,3 +160,77 @@ def validate_investigation_safety(
                 f"Cited evidence_id {citation.evidence_id!r} is not in packet valid evidence IDs. "
                 "The AI must never invent evidence."
             )
+
+
+def validate_chat_safety(
+    reply: str,
+    citations: Sequence[EvidenceCitation],
+    packet: InvestigationPacket,
+) -> None:
+    """Validate that an interactive chat reply satisfies all AccessLens safety invariants.
+
+    Raises SafetyViolationError if:
+    1. Any revocation or removal directive is present.
+    2. Any claim that access is "unnecessary" or "necessary" is present.
+    3. Any severity or risk re-grading is attempted.
+    4. Any definitive usage conclusion is made when telemetry coverage is incomplete.
+    5. Any evidence citation references an unknown or hallucinated evidence ID.
+    """
+    text_blocks = [reply]
+    for cite in citations:
+        text_blocks.append(cite.relevance)
+
+    # 1. Check for revocation/removal directives
+    for text in text_blocks:
+        lowered = text.lower()
+        for pattern in _REVOCATION_DIRECTIVE_PATTERNS:
+            if pattern.search(text):
+                if any(allowed in lowered for allowed in _ALLOWED_FACTUAL_REVOCATION):
+                    continue
+                raise SafetyViolationError(
+                    f"Chat output contains forbidden revocation or removal directive: {text!r}. "
+                    "AccessLens never prescribes revocation; a human decides."
+                )
+
+    # 2. Check for necessity assertions
+    for text in text_blocks:
+        lowered = text.lower()
+        for phrase in _FORBIDDEN_NECESSITY_PHRASES:
+            if phrase in lowered:
+                raise SafetyViolationError(
+                    f"Chat output asserts an unsupported necessity conclusion ({phrase!r}): {text!r}. "
+                    "Necessity is a business owner's judgement, not an AI inference."
+                )
+
+    # 3. Check for severity / risk regrading
+    for text in text_blocks:
+        for pattern in _SEVERITY_REGRADE_PATTERNS:
+            if pattern.search(text):
+                raise SafetyViolationError(
+                    f"Chat output attempts to regrade deterministic severity: {text!r}. "
+                    f"The finding severity is {packet.finding.severity} and must not be altered."
+                )
+
+    # 4. Check for coverage integrity
+    is_coverage_incomplete = (
+        packet.subject.activity.coverage != Coverage.COMPLETE
+        or packet.finding.evidence_completeness != EvidenceCompleteness.COMPLETE
+    )
+    if is_coverage_incomplete:
+        for text in text_blocks:
+            for pattern in _DEFINITIVE_USAGE_PATTERNS:
+                if pattern.search(text):
+                    raise SafetyViolationError(
+                        f"Chat output makes definitive usage assertions while coverage is incomplete: {text!r}. "
+                        "When coverage is PARTIAL or MISSING, missing evidence must remain uncertainty."
+                    )
+
+    # 5. Check for hallucinated evidence citations
+    valid_ids = packet.valid_evidence_ids
+    for citation in citations:
+        if citation.evidence_id not in valid_ids:
+            raise SafetyViolationError(
+                f"Cited evidence_id {citation.evidence_id!r} is not in packet valid evidence IDs. "
+                "The AI must never invent evidence."
+            )
+

@@ -12,8 +12,10 @@ import { cache } from "react";
 
 import type {
   AnalysisResponse,
+  ChatMessage,
   FindingDossierResponse,
   HealthResponse,
+  InvestigationChatResponse,
   PersonaListResponse,
   StructuredInvestigationResult,
 } from "@/types/api";
@@ -108,4 +110,45 @@ export const fetchInvestigation = cache(
     }
   },
 );
+
+/**
+ * Interactive AI review chat for a finding.
+ *
+ * Calls the read-only investigation endpoint with query parameters.
+ */
+export async function fetchInvestigationChat(
+  findingId: string,
+  message: string,
+  history: ChatMessage[] = [],
+): Promise<InvestigationChatResponse> {
+  const params = new URLSearchParams({
+    q: message,
+    history: JSON.stringify(history),
+  });
+
+  const isBrowser = typeof window !== "undefined";
+  const url = isBrowser
+    ? `/api/analysis/findings/${encodeURIComponent(findingId)}/investigation?${params.toString()}`
+    : `${BASE_URL}/api/analysis/findings/${encodeURIComponent(findingId)}/investigation?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    let detail = `${response.status} ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {}
+    throw new ApiError(response.status, detail);
+  }
+
+  return (await response.json()) as InvestigationChatResponse;
+}
+
 

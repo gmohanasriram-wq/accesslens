@@ -26,11 +26,16 @@ disagree about who someone is or how much of the window we can vouch for.
 
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, HTTPException, status
 
 from app.ai import (
+    ChatMessage,
+    InvestigationChatResponse,
     StructuredInvestigationResult,
     build_investigation_packet,
+    investigate_chat,
     investigate_finding,
 )
 from app.api.deps import DatasetDep, SessionDep, SettingsDep
@@ -136,18 +141,20 @@ def get_finding(
 
 @router.get(
     "/analysis/findings/{finding_id}/investigation",
-    response_model=StructuredInvestigationResult,
+    response_model=StructuredInvestigationResult | InvestigationChatResponse,
 )
 def get_finding_investigation(
     finding_id: str,
     session: SessionDep,
     dataset: DatasetDep,
     settings: SettingsDep,
-) -> StructuredInvestigationResult:
-    """One finding's AI forensic investigation dossier.
+    q: str | None = None,
+    history: str | None = None,
+) -> StructuredInvestigationResult | InvestigationChatResponse:
+    """One finding's AI forensic investigation dossier or contextual chat query.
 
-    Deterministic and provider-agnostic. Produces structured forensic analysis,
-    separating verified facts from inferences and drafting reviewer questions.
+    When `q` is omitted, produces the static structured forensic analysis dossier.
+    When `q` is provided, executes an interactive, grounded cross-examination turn.
     404 for an unknown id.
     """
     findings = analyze(dataset, settings)
@@ -163,7 +170,25 @@ def get_finding_investigation(
         raise _unknown_subject(finding)
 
     packet = build_investigation_packet(finding, subject, dataset, settings)
-    return investigate_finding(packet)
+
+    if q is not None:
+        parsed_history: list[ChatMessage] = []
+        if history:
+            try:
+                raw_list = json.loads(history)
+                if isinstance(raw_list, list):
+                    for item in raw_list:
+                        if isinstance(item, dict) and "role" in item and "content" in item:
+                            parsed_history.append(
+                                ChatMessage(role=item["role"], content=item["content"])
+                            )
+            except Exception:
+                pass
+        return investigate_chat(packet, message=q, history=parsed_history, settings=settings)
+
+    return investigate_finding(packet, settings=settings)
+
+
 
 
 def _subject(

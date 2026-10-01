@@ -9,6 +9,7 @@ questions for a human reviewer.
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 from pydantic import AwareDatetime, Field
 from app.core.time import UTCModel
 
@@ -17,6 +18,9 @@ __all__ = [
     "EvidenceCitation",
     "FactVsInference",
     "StructuredInvestigationResult",
+    "ChatMessage",
+    "InvestigationChatRequest",
+    "InvestigationChatResponse",
 ]
 
 
@@ -96,3 +100,27 @@ class StructuredInvestigationResult(UTCModel):
         description="Identifier of the provider/model that generated this result"
     )
     generated_at: AwareDatetime
+
+
+# Contextual AI Review Chatbot Schemas
+
+
+class ChatMessage(UTCModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class InvestigationChatRequest(UTCModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=10)
+
+
+class InvestigationChatResponse(UTCModel):
+    finding_id: str
+    reply: str
+    citations: list[EvidenceCitation] = Field(default_factory=list)
+    suggested_followups: list[str] = Field(default_factory=list)
+    provider_info: str
+    is_fallback: bool = False
+    generated_at: AwareDatetime
+

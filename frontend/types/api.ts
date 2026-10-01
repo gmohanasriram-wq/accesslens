@@ -273,3 +273,28 @@ export interface ExportableAuditorDossier {
   exported_at: string;
 }
 
+/* ------------------------------------------------------------------------- *
+ * Contextual AI Review Chatbot
+ * ------------------------------------------------------------------------- */
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface InvestigationChatRequest {
+  message: string;
+  history?: ChatMessage[];
+}
+
+export interface InvestigationChatResponse {
+  finding_id: string;
+  reply: string;
+  citations: EvidenceCitation[];
+  suggested_followups: string[];
+  provider_info: string;
+  is_fallback: boolean;
+  generated_at: string;
+}
+
+

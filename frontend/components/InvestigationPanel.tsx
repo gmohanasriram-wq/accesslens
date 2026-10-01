@@ -1,6 +1,7 @@
 import type { StructuredInvestigationResult } from "@/types/api";
 import { Panel, Stamp } from "@/components/ui";
 import { formatStamp } from "@/lib/format";
+import { InvestigationChat } from "@/components/InvestigationChat";
 
 interface InvestigationPanelProps {
   investigation: StructuredInvestigationResult;
@@ -183,6 +184,13 @@ export function InvestigationPanel({ investigation }: InvestigationPanelProps) {
               </ul>
             </div>
           )}
+
+          {/* Interactive Cross-Examination Chatbot */}
+          <InvestigationChat
+            findingId={investigation.finding_id}
+            subjectName={investigation.user_id}
+            initialProviderInfo={investigation.provider_info}
+          />
 
           {/* Provenance Footer */}
           <div className="border-t border-rule/60 pt-3">

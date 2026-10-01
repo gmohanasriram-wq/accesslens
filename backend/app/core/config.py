@@ -26,7 +26,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.enums import ActivitySource, Capability
@@ -135,6 +135,40 @@ class Settings(BaseSettings):
     ghost_access_min_post_deactivation_events: int = 1
     # Grace window for clock skew between systems. 0 = strict ordering.
     ghost_access_grace_hours: int = 0
+
+    # --- AI provider (Phase 4) -------------------------------------------- #
+    ai_provider: Literal["mock", "nvidia"] = Field(
+        default="mock",
+        validation_alias=AliasChoices(
+            "ACCESSLENS_AI_PROVIDER", "AI_PROVIDER", "ai_provider"
+        ),
+    )
+    nvidia_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "ACCESSLENS_NVIDIA_API_KEY", "NVIDIA_API_KEY", "nvidia_api_key"
+        ),
+    )
+    nvidia_model: str = Field(
+        default="nvidia/nemotron-3-super-120b-a12b",
+        validation_alias=AliasChoices(
+            "ACCESSLENS_NVIDIA_MODEL", "NVIDIA_MODEL", "nvidia_model"
+        ),
+    )
+    nvidia_base_url: str = Field(
+        default="https://integrate.api.nvidia.com/v1",
+        validation_alias=AliasChoices(
+            "ACCESSLENS_NVIDIA_BASE_URL", "NVIDIA_BASE_URL", "nvidia_base_url"
+        ),
+    )
+    nvidia_timeout_seconds: float = Field(
+        default=120.0,
+        validation_alias=AliasChoices(
+            "ACCESSLENS_NVIDIA_TIMEOUT_SECONDS",
+            "NVIDIA_TIMEOUT_SECONDS",
+            "nvidia_timeout_seconds",
+        ),
+    )
 
     # --- CORS ------------------------------------------------------------- #
     cors_origins: tuple[str, ...] = (

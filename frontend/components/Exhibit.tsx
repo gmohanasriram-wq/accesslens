@@ -47,9 +47,10 @@ export function Exhibit({
 
   return (
     <li
+      id={`exhibit-${evidence.evidence_id}`}
       data-evidence-id={evidence.evidence_id}
       data-timeline-point={isTimeline ? evidence.evidence_id : undefined}
-      className="grid grid-cols-[1.5rem_1fr] border-b border-rule last:border-b-0 sm:grid-cols-[2rem_1fr]"
+      className="scroll-mt-8 grid grid-cols-[1.5rem_1fr] border-b border-rule last:border-b-0 sm:grid-cols-[2rem_1fr]"
     >
       <div className="relative" aria-hidden="true">
         <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-rule" />
